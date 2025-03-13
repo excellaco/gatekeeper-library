@@ -5,11 +5,18 @@ metadata:
 spec:
   match:
     kinds:
-      # Workload resources
+      - apiGroups: [""]
+        kinds: ["Service"]
       - apiGroups: ["apps"]
-        kinds: ["Deployment"] #"StatefulSet", "DaemonSet", "ReplicaSet"]
+        kinds: ["Deployment"]
   parameters:
-    message: "Deployments must have the 'sonarqube-status' annotation with value 'SONAR_STATUS=success'."
+    message: "All services must have a `a8r.io/owner` and `a8r.io/runbook` annotations."
     annotations:
-      - key: "sonarqube-status"
-        allowedRegex: "^SONAR_STATUS=success$"  # Enforce exact match
+      # - key: a8r.io/owner
+      #   # Matches email address or github user
+      #   allowedRegex: ^([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}|[a-z]{1,39})$
+      # - key: a8r.io/runbook
+      #   # Matches urls including or not http/https
+      #   allowedRegex: ^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$
+      - key: sonarqube-scan
+        allowedRegex: "^success$"

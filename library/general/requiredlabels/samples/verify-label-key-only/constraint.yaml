@@ -5,35 +5,11 @@ metadata:
 spec:
   match:
     kinds:
-      # Core resources
       - apiGroups: [""]
-        kinds: ["Namespace", "Service"]  #"ConfigMap", "Secret", "PersistentVolumeClaim", "ServiceAccount"]
-      
-      # Workload resources
+        kinds: ["Pod"]
       - apiGroups: ["apps"]
-        kinds: ["Deployment"] #"StatefulSet", "DaemonSet", "ReplicaSet"]
-      
-      # Batch resources
-      - apiGroups: ["batch"]
-        kinds: ["Job", "CronJob"]
-      
-      # Networking resources
-      - apiGroups: ["networking.k8s.io"]
-        kinds: ["Ingress", "NetworkPolicy"]
-      
-      # OpenShift-specific resources
-      - apiGroups: ["route.openshift.io"]
-        kinds: ["Route"]
-      
-      # RBAC resources
-      - apiGroups: ["rbac.authorization.k8s.io"]
-        kinds: ["Role", "RoleBinding"]
-
-    namespaceSelector:
-      matchLabels:
-        policy: restricted  # Matches only namespaces with this label
-
+        kinds: ["Deployment"]
   parameters:
-    message: "All pods must have label of key `project` regardless of the label's value"
+    message: "All pods and deployments must have label of key `project` regardless of the label's value"
     labels:
       - key: project
