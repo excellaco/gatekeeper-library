@@ -6,9 +6,7 @@ spec:
   match:
     kinds:
       - apiGroups: [""]
-        kinds: ["Service"]
-      - apiGroups: ["apps"]
-        kinds: ["Deployment"]
+        kinds: ["pods"]
   parameters:
     message: "All services must have a `a8r.io/owner` and `a8r.io/runbook` annotations."
     annotations:
