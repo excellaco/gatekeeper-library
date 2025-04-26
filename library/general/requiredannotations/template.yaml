@@ -39,21 +39,39 @@ spec:
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
-        package k8srequiredannotations
+          package k8srequiredannotations
 
-        violation[{"msg": msg, "details": {"missing_annotations": missing}}] {
-            provided := {annotation | input.review.object.metadata.annotations[annotation]}
-            required := {annotation | annotation := input.parameters.annotations[_].key}
-            missing := required - provided
-            count(missing) > 0
-            msg := sprintf("you must provide annotation(s): %v", [missing])
-        }
+          violation[{"msg": msg, "details": {"missing_annotations": missing, "resource_kind": kind, "resource_name": name, "namespace": namespace}}] {
+                  # Extract resource information for better context in messages
+                  obj := input.review.object
+                  name := obj.metadata.name
+                  namespace := obj.metadata.namespace
+                  kind := input.review.kind.kind
+                  
+                  # Check for missing annotations
+                  provided := {annotation | obj.metadata.annotations[annotation]}
+                  required := {annotation | annotation := input.parameters.annotations[_].key}
+                  missing := required - provided
+                  count(missing) > 0
+                  
+                  # More informative message that includes resource details
+                  msg := sprintf("Resource %v '%v' in namespace '%v' is missing required annotation(s): %v", [kind, name, namespace, missing])
+              }
 
-        violation[{"msg": msg}] {
-          value := input.review.object.metadata.annotations[key]
-          expected := input.parameters.annotations[_]
-          expected.key == key
-          expected.allowedRegex != ""
-          not regex.match(expected.allowedRegex, value)
-          msg := sprintf("Annotation <%v: %v> does not satisfy allowed regex: %v", [key, value, expected.allowedRegex])
-        }
+              violation[{"msg": msg, "details": {"invalid_annotation": key, "resource_kind": kind, "resource_name": name, "namespace": namespace}}] {
+                  # Extract resource information for better context in messages
+                  obj := input.review.object
+                  name := obj.metadata.name
+                  namespace := obj.metadata.namespace
+                  kind := input.review.kind.kind
+                  
+                  # Check regex validation
+                  value := obj.metadata.annotations[key]
+                  expected := input.parameters.annotations[_]
+                  expected.key == key
+                  expected.allowedRegex != ""
+                  not regex.match(expected.allowedRegex, value)
+                  
+                  # More informative message that includes resource details and expected format
+                  msg := sprintf("Resource %v '%v' in namespace '%v' has annotation '%v' with value '%v' that does not match required format: %v", [kind, name, namespace, key, value, expected.allowedRegex])
+              }

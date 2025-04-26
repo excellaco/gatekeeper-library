@@ -5,8 +5,12 @@ metadata:
 spec:
   match:
     kinds:
-      - apiGroups: [""]
-        kinds: ["pods"]
+      # Apply to standard Deployments
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+      # Apply to Argo Rollouts
+      - apiGroups: ["argoproj.io"]
+        kinds: ["Rollout"]
   parameters:
     message: "All services must have a `a8r.io/owner` and `a8r.io/runbook` annotations."
     annotations:
