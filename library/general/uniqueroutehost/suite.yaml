@@ -1,0 +1,19 @@
+kind: Suite
+apiVersion: test.gatekeeper.sh/v1alpha1
+metadata:
+  name: uniqueroutehostname
+tests:
+- name: unique-route-hostname
+  template: template.yaml
+  constraint: samples/unique-route-host/constraint.yaml
+  cases:
+  - name: example-allowed
+    object: samples/unique-route-host/example_allowed.yaml
+    assertions:
+    - violations: no
+  - name: example-disallowed
+    object: samples/unique-route-host/example_disallowed.yaml
+    inventory:
+    - samples/unique-route-host/example_inventory_disallowed.yaml
+    assertions:
+    - violations: yes

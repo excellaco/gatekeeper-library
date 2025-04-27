@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: app1-route
+  namespace: staging
+spec:
+  host: app1.example.com
+  to:
+    kind: Service
+    name: app1-service
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

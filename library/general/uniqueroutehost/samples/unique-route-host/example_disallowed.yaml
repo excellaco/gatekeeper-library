@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: new-route
+  namespace: test-routes
+spec:
+  host: duplicate.example.com
+  to:
+    kind: Service
+    name: new-service
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
