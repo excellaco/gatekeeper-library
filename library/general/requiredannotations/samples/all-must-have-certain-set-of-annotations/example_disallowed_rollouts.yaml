@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: hello-world-app
+spec:
+  replicas: 2
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: hello-world
+  strategy:
+    blueGreen:
+      activeService: hello-world-active
+      autoPromotionEnabled: false
+      previewService: hello-world-preview
+      previewReplicaCount: 1
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - image: gcr.io/google-samples/hello-app:1.0  # This is a real web server
+        name: hello-world-app
+        ports:
+        - containerPort: 8080  # This image uses port 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080  # Changed to match the container port
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080  # Changed to match the container port
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"

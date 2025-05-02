@@ -19,6 +19,12 @@ spec:
           properties:
             message:
               type: string
+            exemptedServiceAccounts:
+              type: array
+              description: >-
+                A list of service accounts that are exempt from this constraint.
+              items:
+                type: string
             annotations:
               type: array
               description: >-
@@ -30,6 +36,10 @@ spec:
                     type: string
                     description: >-
                       The required annotation.
+                  value:
+                    type: string
+                    description: >-
+                      If specified, the exact value the annotation must have.
                   allowedRegex:
                     type: string
                     description: >-
@@ -41,19 +51,68 @@ spec:
       rego: |
         package k8srequiredannotations
 
+        # DEBUGGING SECTION - Always log the user (simplified version)
+        warn[{"msg": msg}] {
+            # Simplified rule that will always trigger
+            msg := sprintf("User: %v - Resource: %v - Kind: %v", [
+                input.review.userInfo.username,
+                input.review.object.metadata.name,
+                input.review.kind.kind
+            ])
+        }
+
+        # VIOLATION RULES FOR DENY ENFORCEMENT
         violation[{"msg": msg, "details": {"missing_annotations": missing}}] {
-            provided := {annotation | input.review.object.metadata.annotations[annotation]}
+            # Skip enforcement for exempted service accounts
+            not is_exempted_user
+            
+            # Get the list of required annotations from parameters
             required := {annotation | annotation := input.parameters.annotations[_].key}
+            
+            # Get provided annotations - handle case where annotations don't exist
+            annotations := object.get(input.review.object.metadata, "annotations", {})
+            provided := {annotation | annotations[annotation]}
+            
+            # Calculate missing annotations
             missing := required - provided
             count(missing) > 0
             msg := sprintf("you must provide annotation(s): %v", [missing])
         }
 
         violation[{"msg": msg}] {
-          value := input.review.object.metadata.annotations[key]
-          expected := input.parameters.annotations[_]
-          expected.key == key
-          expected.allowedRegex != ""
-          not regex.match(expected.allowedRegex, value)
-          msg := sprintf("Annotation <%v: %v> does not satisfy allowed regex: %v", [key, value, expected.allowedRegex])
+            # Skip enforcement for exempted service accounts
+            not is_exempted_user
+            
+            # Check if annotation values match required values when specified
+            annotations := input.review.object.metadata.annotations
+            
+            value := annotations[key]
+            expected := input.parameters.annotations[_]
+            expected.key == key
+            expected.value != ""
+            value != expected.value
+            
+            msg := sprintf("Annotation <%v: %v> does not match required value: %v", [key, value, expected.value])
+        }
+
+        violation[{"msg": msg}] {
+            # Skip enforcement for exempted service accounts
+            not is_exempted_user
+            
+            # Check if annotation values match required regex when specified
+            annotations := input.review.object.metadata.annotations
+            
+            value := annotations[key]
+            expected := input.parameters.annotations[_]
+            expected.key == key
+            expected.allowedRegex != ""
+            not regex.match(expected.allowedRegex, value)
+            
+            msg := sprintf("Annotation <%v: %v> does not satisfy allowed regex: %v", [key, value, expected.allowedRegex])
+        }
+
+        # Helper to check if user is exempted from enforcement
+        is_exempted_user {
+            sa := input.parameters.exemptedServiceAccounts[_]
+            input.review.userInfo.username == sa
         }

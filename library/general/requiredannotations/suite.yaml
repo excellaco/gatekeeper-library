@@ -15,3 +15,7 @@ tests:
     object: samples/all-must-have-certain-set-of-annotations/example_disallowed.yaml
     assertions:
     - violations: yes
+  - name: example-disallowed-rollouts
+    object: samples/all-must-have-certain-set-of-annotations/example_disallowed_rollouts.yaml
+    assertions:
+    - violations: yes
